@@ -7,20 +7,31 @@ N-panel (3D Viewport > Sidebar > Controllers) to manage "controller" empties tha
 live in the CONTROLLERS collection (MainController is the default one), their
 custom properties, and every driver in the file that reads from them.
 
-* Creates the CONTROLLERS collection and the MainController empty when missing.
-* Add / edit / rename / delete custom properties, change their type in one click
-  (Float, Integer, Boolean, String, Float Array, Color) keeping the value.
-* Renaming a property also fixes every driver that reads it.
-* Lists all drivers that use the active controller, lets you edit type /
-  expression / variables, select the driven object, remove them,
-  copy them to the selected objects and retarget them to another controller.
+* Creates the CONTROLLERS collection and the MainController empty when missing
+  (on file load, or with the panel's button).
+* Properties: one row each with a value preview, Edit (name, type, value, limits,
+  tooltip; the value is converted on type change), Copy Driver, and a lock + bin
+  to delete. Renaming a property updates every driver that reads it.
+* Copy Driver + right-click any property > "Paste Controller Driver".
+* Drivers panel: every driver reading the active controller, with its live
+  result; edit, select owner, copy to selected objects, retarget, remove.
+
+How the file is organized (top to bottom):
+  constants -> generic helpers (paths, setup, property types and conversion)
+  -> driver helpers (scan, copy, retarget) -> cached driver index used by the
+  panels -> operators (controllers, properties, drivers) -> UI (list + panels)
+  -> expression sync (keeps "var" ready on non-scripted drivers)
+  -> handlers and registration.
+
+Drivers are found by scanning bpy.data; nothing is stored in the .blend except
+the controllers' own custom properties and one scene setting group (dc_settings).
 """
 
 bl_info = {
     "name": "Driver Controllers",
     "author": "Matteo Fontana",
     "version": (1, 0, 0),
-    "blender": (4, 2, 0),
+    "blender": (5, 3, 0),
     "location": "3D Viewport > Sidebar (N) > Controllers",
     "description": "Manage controller empties, their custom properties and the drivers that use them",
     "category": "Animation",
@@ -106,11 +117,13 @@ ID_ICON = {
 # -----------------------------------------------------------------------------
 
 def addon_prefs():
+    """The add-on's preferences, or None when the module is not enabled as an add-on (e.g. in tests)."""
     addon = bpy.context.preferences.addons.get(__package__ or __name__)
     return addon.preferences if addon else None
 
 
 def prop_path(name):
+    """RNA path of a custom property: 'my prop' -> '["my prop"]' (quotes escaped)."""
     return '["%s"]' % bpy.utils.escape_identifier(name)
 
 
@@ -126,20 +139,24 @@ def path_prop_name(path):
 
 
 def get_collection():
+    """The CONTROLLERS collection, or None."""
     return bpy.data.collections.get(COLL_NAME)
 
 
 def get_controllers():
+    """Every object in CONTROLLERS (each one is a controller)."""
     coll = get_collection()
     return list(coll.objects) if coll else []
 
 
 def is_controller(obj):
+    """True if obj is one of the controllers."""
     coll = get_collection()
     return bool(coll and obj and coll.objects.get(obj.name) == obj)
 
 
 def setup_missing(scene):
+    """True if CONTROLLERS or MainController is missing or not linked in this scene."""
     coll = get_collection()
     main = bpy.data.objects.get(MAIN_NAME)
     return (
@@ -168,6 +185,7 @@ def ensure_setup(scene):
 
 
 def active_controller(context):
+    """Controller selected in the panel list; falls back to MainController, then the first one."""
     coll = get_collection()
     if not coll or not len(coll.objects):
         return None
@@ -178,6 +196,7 @@ def active_controller(context):
 
 
 def set_active_controller(context, obj):
+    """Select obj in the panel's controller list."""
     coll = get_collection()
     if coll and obj:
         idx = coll.objects.find(obj.name)
@@ -186,6 +205,10 @@ def set_active_controller(context, obj):
 
 
 def controller_from_name(context, name):
+    """Object called name, or the active controller when name is empty/unknown.
+
+    Operators carry the controller by name so they keep working from dialogs.
+    """
     if name:
         obj = bpy.data.objects.get(name)
         if obj:
@@ -209,6 +232,7 @@ def user_props(obj):
 
 
 def ui_dict(obj, name):
+    """UI settings of a custom property (min, max, subtype, ...) as a dict; {} if unavailable."""
     try:
         return obj.id_properties_ui(name).as_dict()
     except Exception:
@@ -216,6 +240,7 @@ def ui_dict(obj, name):
 
 
 def detect_type(obj, name):
+    """Type id (see PROP_TYPES) of obj[name], read from the stored value and its subtype."""
     v = obj[name]
     if isinstance(v, bool):
         return "BOOL"
@@ -233,14 +258,17 @@ def detect_type(obj, name):
 
 
 def _as_list(v):
+    """Python list for ID-property arrays, None for anything else."""
     return list(v.to_list()) if hasattr(v, "to_list") else None
 
 
 def _fmt(x):
+    """Short text for a number: floats use %g."""
     return ("%g" % x) if isinstance(x, float) else str(x)
 
 
 def to_scalar(v):
+    """First element / number / parsed string as float (0.0 when not a number)."""
     lst = _as_list(v)
     if lst is not None:
         v = lst[0] if lst else 0.0
@@ -253,6 +281,7 @@ def to_scalar(v):
 
 
 def _parse_list(s):
+    """'1, 2; 3' -> [1.0, 2.0, 3.0], skipping parts that are not numbers."""
     out = []
     for part in s.replace(";", ",").split(","):
         try:
@@ -300,6 +329,10 @@ def convert_value(v, new_type, length=3):
 
 
 def copy_prop(src, dst, name, overwrite=True):
+    """Copy property name (value, UI settings, override flag) from src to dst.
+
+    Returns False when dst already has it and overwrite is False.
+    """
     if name in dst.keys() and not overwrite:
         return False
     v = src[name]
@@ -348,10 +381,15 @@ def reinsert_prop(obj, name):
 # -----------------------------------------------------------------------------
 
 def make_ref(attr, name, embedded=""):
+    """Text key for a driver owner: bpy.data collection, name, optional embedded attribute.
+
+    Plain strings survive undo, unlike Python references to Blender data.
+    """
     return "\t".join((attr, name, embedded))
 
 
 def resolve_ref(ref):
+    """Data-block for a key made by make_ref(), or None if it no longer exists."""
     try:
         attr, name, emb = ref.split("\t")
     except ValueError:
@@ -364,6 +402,9 @@ def resolve_ref(ref):
 
 
 def iter_anim_ids():
+    """Yield (data-block, ref) for every data-block that can own drivers,
+    including material/world node trees.
+    """
     for attr in ID_COLLECTIONS:
         coll = getattr(bpy.data, attr, None)
         if coll is None:
@@ -376,6 +417,7 @@ def iter_anim_ids():
 
 
 def iter_drivers():
+    """Yield (owner data-block, ref, F-Curve) for every driver in the file."""
     for idb, ref in iter_anim_ids():
         ad = getattr(idb, "animation_data", None)
         if ad is None:
@@ -418,13 +460,15 @@ def controller_drivers(ctrl, prop_filter=""):
 # Panels redraw very often (mouse hover, playback...). Instead of scanning every
 # driver of the file on each redraw, one scan is cached and rebuilt only after
 # a data change (depsgraph update, undo/redo, file load, our own operators).
-# Only plain data is stored (strings / ints), never RNA pointers, so the cache
-# can never point to freed memory after an undo.
+# Only plain data is stored (owner keys, paths, numeric ids from as_pointer()),
+# never Python references to Blender data, so nothing in it can touch freed
+# memory; undo/redo and file load drop it because those ids change.
 
 _INDEX = {"entries": None}
 
 
 def invalidate_index(*_args):
+    """Drop the cached driver index; the next panel redraw rebuilds it."""
     _INDEX["entries"] = None
 
 
@@ -491,6 +535,7 @@ def cached_controller_drivers(ctrl, prop_filter=""):
 
 @persistent
 def _on_depsgraph_update(_scene, _depsgraph=None):
+    """Handler: data changed, so the cached index may be outdated (skipped while playing)."""
     screen = getattr(bpy.context, "screen", None)
     if screen is not None and screen.is_animation_playing:
         return  # nothing is edited during playback, keep the cache
@@ -498,6 +543,7 @@ def _on_depsgraph_update(_scene, _depsgraph=None):
 
 
 def find_fcurve(idb, data_path, index):
+    """Driver F-Curve of idb at data_path[index], or None."""
     ad = getattr(idb, "animation_data", None)
     if ad is None:
         return None
@@ -505,6 +551,7 @@ def find_fcurve(idb, data_path, index):
 
 
 def refresh_driver(fc):
+    """Clear the driver's 'invalid' flag so Blender evaluates it again."""
     try:
         fc.driver.is_valid = True
         fc.driver.expression = fc.driver.expression
@@ -513,6 +560,10 @@ def refresh_driver(fc):
 
 
 def tag_update(context):
+    """Call after an operator changed properties or drivers.
+
+    Rebuilds the cache lazily, fixes expressions, re-evaluates and redraws.
+    """
     invalidate_index()
     try:
         sync_expressions(refresh_invalid=True)
@@ -529,6 +580,7 @@ def tag_update(context):
 
 
 def rename_prop_in_drivers(ctrl, old, new):
+    """Point every driver reading ctrl[old] to ctrl[new]; returns how many changed."""
     count = 0
     for _idb, _ref, fc in iter_drivers():
         changed = False
@@ -545,6 +597,10 @@ def rename_prop_in_drivers(ctrl, old, new):
 
 
 def retarget_fcurve(fc, old_ctrl, new_ctrl, copy_missing=True):
+    """Make the driver read new_ctrl instead of old_ctrl.
+
+    With copy_missing, properties it reads are copied to new_ctrl when absent.
+    """
     for var in fc.driver.variables:
         for t in var.targets:
             if t.id is not None and t.id == old_ctrl:
@@ -557,6 +613,7 @@ def retarget_fcurve(fc, old_ctrl, new_ctrl, copy_missing=True):
 
 
 def objects_for_id(idb):
+    """Objects that use a driver owner (object, shape keys, mesh data, material...)."""
     if isinstance(idb, bpy.types.Object):
         return [idb]
     objs = bpy.data.objects
@@ -586,6 +643,12 @@ def counterpart_id(src_idb, obj):
 
 
 def copy_driver(src_fc, src_owner, dst_id, old_ctrl=None, new_ctrl=None, copy_missing=True):
+    """Copy src_fc (owned by src_owner) onto dst_id and return the new F-Curve.
+
+    Copies type, expression, variables and targets, keyframes, extrapolation and
+    Generator modifiers. Targets pointing to old_ctrl move to new_ctrl when given;
+    a target pointing to the source owner itself follows the copy.
+    """
     path, idx = src_fc.data_path, src_fc.array_index
     try:
         dst_id.driver_remove(path, idx)
@@ -691,6 +754,7 @@ _ENUM_CACHE = {}
 
 
 def _controller_items(key, extra):
+    """Enum items: the fixed extra entries followed by every controller."""
     items = [(i, n, d, ic, k) for k, (i, n, d, ic) in enumerate(extra)]
     for o in get_controllers():
         items.append((o.name, o.name, "Controller " + o.name, "OUTLINER_OB_EMPTY", len(items)))
@@ -701,10 +765,12 @@ def _controller_items(key, extra):
 
 
 def ctrl_items(self, context):
+    """Enum items callback: every controller."""
     return _controller_items("plain", ())
 
 
 def ctrl_items_keep(self, context):
+    """Enum items callback: 'Keep Same Controller' plus every controller."""
     return _controller_items("keep", (("KEEP", "Keep Same Controller", "Do not change the controller", "LINKED"),))
 
 
@@ -1223,6 +1289,7 @@ _CLIPBOARD = {"ctrl": "", "prop": ""}
 
 
 def clipboard_source():
+    """(controller, property name) copied with the copy button, or (None, None)."""
     ctrl = bpy.data.objects.get(_CLIPBOARD["ctrl"])
     if ctrl is None or _CLIPBOARD["prop"] not in ctrl.keys():
         return None, None
@@ -1327,6 +1394,7 @@ class DC_OT_driver_paste(Operator):
 
 
 def draw_paste_menu(self, context):
+    """Right-click menu entries 'Paste Controller Driver' (shown only when a driver was copied)."""
     ctrl, pname = clipboard_source()
     hovered = hovered_property(context) if ctrl is not None else None
     if hovered is None:
@@ -1814,10 +1882,8 @@ def driven_info(idb, fc):
 
 
 # -----------------------------------------------------------------------------
-# Registration
+# Expression sync: keep a ready-to-use expression ("var") on controller drivers
 # -----------------------------------------------------------------------------
-
-# --- Keep a ready-to-use expression ("var") on controller drivers -------------
 # Blender keeps an old/empty expression on non-scripted drivers, so switching
 # "Averaged Value" -> "Scripted Expression" would show something useless.
 
@@ -1826,6 +1892,7 @@ _LAST_TYPES = {}
 
 
 def default_expression(drv):
+    """Expression equivalent to the driver's non-scripted type, e.g. 'var' or '(a + b) / 2'."""
     names = [v.name for v in drv.variables]
     if not names:
         return "0.0"
@@ -1837,11 +1904,13 @@ def default_expression(drv):
 
 
 def expression_uses_vars(drv):
+    """True if the expression mentions at least one of the driver's variables."""
     expr = drv.expression or ""
     return any(re.search(r"\b%s\b" % re.escape(v.name), expr) for v in drv.variables)
 
 
 def _reads_any(drv, ptrs):
+    """True if a variable of drv targets one of the data-blocks whose pointers are in ptrs."""
     for var in drv.variables:
         for t in var.targets:
             tid = t.id
@@ -1880,6 +1949,7 @@ def sync_expressions(refresh_invalid=False):
 
 
 def _on_driver_type_changed(*_args):
+    """msgbus callback: a driver type changed somewhere (e.g. in the Drivers panel)."""
     try:
         sync_expressions()
     except Exception as e:
@@ -1887,13 +1957,19 @@ def _on_driver_type_changed(*_args):
 
 
 def subscribe_msgbus():
+    """Watch Driver.type changes. Subscriptions are lost on file load, so this is redone then."""
     bpy.msgbus.clear_by_owner(_MSGBUS_OWNER)
     bpy.msgbus.subscribe_rna(key=(bpy.types.Driver, "type"), owner=_MSGBUS_OWNER,
                              args=(), notify=_on_driver_type_changed)
 
 
+# -----------------------------------------------------------------------------
+# Registration
+# -----------------------------------------------------------------------------
+
 @persistent
 def _on_load(_dummy):
+    """load_post handler: create the setup (if enabled), reset caches, re-subscribe."""
     prefs = addon_prefs()
     if prefs is None or prefs.auto_setup:
         try:
@@ -1909,6 +1985,7 @@ def _on_load(_dummy):
 @persistent
 def _on_undo_redo(*_args):
     # undo/redo rebuilds all data: memory addresses change
+    """Undo/redo rebuilds all data: drop everything that depends on memory addresses."""
     _LAST_TYPES.clear()
     invalidate_index()
 
@@ -1922,6 +1999,7 @@ _HANDLERS = (
 
 
 def _initial_setup():
+    """Timer run once after registration, when the scene can be edited."""
     _on_load(None)
     return None
 
@@ -1954,6 +2032,7 @@ classes = (
 
 
 def register():
+    """Register classes, the scene settings, the right-click menu entry and the handlers."""
     for c in classes:
         bpy.utils.register_class(c)
     bpy.types.Scene.dc_settings = PointerProperty(type=DC_Settings)
@@ -1966,6 +2045,7 @@ def register():
 
 
 def unregister():
+    """Undo everything register() did."""
     bpy.msgbus.clear_by_owner(_MSGBUS_OWNER)
     bpy.types.UI_MT_button_context_menu.remove(draw_paste_menu)
     for name, fn in _HANDLERS:
