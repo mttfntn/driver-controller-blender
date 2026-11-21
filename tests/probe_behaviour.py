@@ -16,7 +16,7 @@ import types
 import bpy
 
 sys.path.insert(0, os.environ["DC_ADDON_ROOT"])
-import driver_controllers as dc  # noqa: E402
+import driver_controller as dc  # noqa: E402
 
 dc.register()
 

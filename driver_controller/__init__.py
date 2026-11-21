@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
-Driver Controllers
+Driver Controller
 ==================
 
 N-panel (3D Viewport > Sidebar > Controllers) to manage "controller" empties that
@@ -28,7 +28,7 @@ the controllers' own custom properties and one scene setting group (dc_settings)
 """
 
 bl_info = {
-    "name": "Driver Controllers",
+    "name": "Driver Controller",
     "author": "Matteo Fontana",
     "version": (1, 0, 0),
     "blender": (5, 3, 0),
@@ -1589,7 +1589,7 @@ class DC_OT_driver_copy(DC_DriverRef, Operator):
                     done += 1
                 except Exception as e:
                     skipped += 1
-                    print(f"Driver Controllers: {o.name} {fc.data_path}: {e}")
+                    print(f"Driver Controller: {o.name} {fc.data_path}: {e}")
         tag_update(context)
         self.report({"INFO"}, f"Copied {done} driver(s)" + (f", skipped {skipped}" if skipped else ""))
         return {"FINISHED"}
@@ -1953,7 +1953,7 @@ def _on_driver_type_changed(*_args):
     try:
         sync_expressions()
     except Exception as e:
-        print("Driver Controllers:", e)
+        print("Driver Controller:", e)
 
 
 def subscribe_msgbus():
@@ -1975,7 +1975,7 @@ def _on_load(_dummy):
         try:
             ensure_setup(bpy.context.scene)
         except Exception as e:
-            print("Driver Controllers: setup failed:", e)
+            print("Driver Controller: setup failed:", e)
     _LAST_TYPES.clear()
     invalidate_index()
     subscribe_msgbus()  # msgbus subscriptions are cleared when a file loads

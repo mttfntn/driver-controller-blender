@@ -1,4 +1,4 @@
-# Handover – Driver Controllers
+# Handover – Driver Controller
 
 ## What it is
 A Blender 5.3 add-on (packaged as an *extension*) that adds an N-panel, *3D Viewport > Sidebar > Controllers*.
@@ -15,9 +15,9 @@ Not a fork: there is no upstream project.
 
 | Path | What it is |
 |---|---|
-| `driver_controllers/__init__.py` | The whole add-on (one module). Its header lists the sections in order. |
-| `driver_controllers/blender_manifest.toml` | Extension manifest: id, version, Blender 5.3 only, license, build excludes. |
-| `driver_controllers/LICENSE` | GPL-3.0 text shipped inside the package. |
+| `driver_controller/__init__.py` | The whole add-on (one module). Its header lists the sections in order. |
+| `driver_controller/blender_manifest.toml` | Extension manifest: id, version, Blender 5.3 only, license, build excludes. |
+| `driver_controller/LICENSE` | GPL-3.0 text shipped inside the package. |
 | `tests/run_blender.py` | Starts an **isolated** headless Blender (factory settings, temporary profile) and runs a script in it. |
 | `tests/test_addon.py` | Unit tests (38): setup, conversions, properties, drivers, controllers, cache, panel drawing, registration. |
 | `tests/test_install.py` | Installs the built zip as an extension in a temporary profile and checks it end to end. |
@@ -47,7 +47,7 @@ Not a fork: there is no upstream project.
    *Scripted Expression* shows something usable. User-written scripted expressions are never touched.
 
 ## Making a change
-1. Edit `driver_controllers/__init__.py`. Operator tooltips come from `bl_description`; do not add docstrings to
+1. Edit `driver_controller/__init__.py`. Operator tooltips come from `bl_description`; do not add docstrings to
    operator classes (Blender would show them as tooltips).
 2. Add or update a test in `tests/test_addon.py`.
 3. Run `python tests/run_blender.py` (must end with `OK`).
@@ -64,14 +64,14 @@ Not a fork: there is no upstream project.
 ## Tests
 ```
 python tests/run_blender.py                                              # 38 unit tests
-blender --factory-startup --command extension build --source-dir driver_controllers --output-dir dist
-python tests/run_blender.py tests/test_install.py -- dist/driver_controllers-1.0.0.zip   # install test
+blender --factory-startup --command extension build --source-dir driver_controller --output-dir dist
+python tests/run_blender.py tests/test_install.py -- dist/driver_controller-1.0.0.zip   # install test
 ```
 `run_blender.py` finds Blender via `--blender`, `$BLENDER`, the default Windows path of 5.3, or `blender` on PATH.
 It never uses your real profile: `--factory-startup` plus a temporary `BLENDER_USER_RESOURCES`.
 
 ## Making a release
-1. Bump `version` in `driver_controllers/blender_manifest.toml` (and `bl_info["version"]`).
+1. Bump `version` in `driver_controller/blender_manifest.toml` (and `bl_info["version"]`).
 2. Update the static *release* badge in `README.md` (the repo is private, so shields.io can't read it).
 3. Commit, push, wait for the *Tests* workflow to pass.
 4. Create an **annotated** tag; its message becomes the release notes:

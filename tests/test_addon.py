@@ -1,4 +1,4 @@
-"""Test suite for the Driver Controllers add-on.
+"""Test suite for the Driver Controller add-on.
 
 Runs inside headless Blender (see tests/run_blender.py). Every test starts from
 Blender's factory scene (Cube, Camera, Light); loading it fires the add-on's
@@ -16,7 +16,7 @@ import unittest
 import bpy
 
 sys.path.insert(0, os.environ.get("DC_ADDON_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import driver_controllers as dc  # noqa: E402
+import driver_controller as dc  # noqa: E402
 
 O = bpy.ops.dctrl
 

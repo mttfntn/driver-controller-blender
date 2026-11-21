@@ -36,7 +36,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--blender")
     ap.add_argument("--addon-root", default=REPO,
-                    help="folder that contains the driver_controllers package")
+                    help="folder that contains the driver_controller package")
     ap.add_argument("script", nargs="?", default=os.path.join(HERE, "test_addon.py"))
     ap.add_argument("script_args", nargs=argparse.REMAINDER)
     a = ap.parse_args()

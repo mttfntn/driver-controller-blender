@@ -1,6 +1,6 @@
-# AGENTS.md – Driver Controllers
+# AGENTS.md – Driver Controller
 
-Blender **5.3-only** extension. Single module `driver_controllers/__init__.py`; N-panel *View3D > Sidebar > Controllers*.
+Blender **5.3-only** extension. Single module `driver_controller/__init__.py`; N-panel *View3D > Sidebar > Controllers*.
 Controllers = objects in collection `CONTROLLERS` (default `MainController`). Manages their ID custom properties and
 every driver in `bpy.data` that reads them. Human-oriented details: `HANDOVER.md`.
 
@@ -8,9 +8,9 @@ every driver in `bpy.data` that reads them. Human-oriented details: `HANDOVER.md
 ```
 python tests/run_blender.py                                   # unit tests (expect "Ran 38 tests ... OK")
 python tests/run_blender.py --blender PATH ...                # other Blender binary ($BLENDER also works)
-blender --factory-startup --command extension validate driver_controllers
-blender --factory-startup --command extension build --source-dir driver_controllers --output-dir dist
-python tests/run_blender.py tests/test_install.py -- dist/driver_controllers-<ver>.zip
+blender --factory-startup --command extension validate driver_controller
+blender --factory-startup --command extension build --source-dir driver_controller --output-dir dist
+python tests/run_blender.py tests/test_install.py -- dist/driver_controller-<ver>.zip
 python tests/run_blender.py --addon-root <old copy> tests/probe_behaviour.py -- old.json   # behaviour snapshot
 python tests/compare_probes.py old.json new.json             # exit 1 on any difference
 ```
@@ -43,7 +43,7 @@ constants → helpers (`prop_path`, `ensure_setup`, `detect_type`, `convert_valu
 - Never keep Python references to Blender data across undo; store names/paths/ints.
 - `obj.keys()` includes other add-ons' registered props; filter with `obj.bl_rna.properties`.
 - Draw code must not write data (only `invalidate_index()` on a plain dict is allowed).
-- Keep `tests/` and repo docs out of the package (the build uses only `driver_controllers/`).
+- Keep `tests/` and repo docs out of the package (the build uses only `driver_controller/`).
 - Line endings: LF (`.gitattributes`).
 
 ## How changes were verified (v1.0.0)

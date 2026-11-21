@@ -1,8 +1,8 @@
 schema_version = "1.0.0"
 
-id = "driver_controllers"
+id = "driver_controller"
 version = "1.0.0"
-name = "Driver Controllers"
+name = "Driver Controller"
 tagline = "Manage controller empties, custom properties and their drivers"
 maintainer = "Matteo Fontana"
 type = "add-on"

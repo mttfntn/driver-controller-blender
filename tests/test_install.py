@@ -1,6 +1,6 @@
 """Install the built package as an extension and check it works (isolated profile).
 
-    python tests/run_blender.py tests/test_install.py -- dist/driver_controllers-X.Y.Z.zip
+    python tests/run_blender.py tests/test_install.py -- dist/driver_controller-X.Y.Z.zip
 
 Covers what test_addon.py cannot: the real install path, the module name
 under bl_ext.*, the add-on preferences, and the "auto-create on file load"
@@ -13,7 +13,7 @@ import sys
 import addon_utils
 import bpy
 
-MODULE = "bl_ext.user_default.driver_controllers"
+MODULE = "bl_ext.user_default.driver_controller"
 zip_path = os.path.abspath(sys.argv[sys.argv.index("--") + 1])
 failures = []
 
