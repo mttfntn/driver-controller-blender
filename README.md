@@ -1,10 +1,11 @@
 # Driver Controller
 
-[![Blender](https://img.shields.io/badge/Blender-5.3-orange?logo=blender&logoColor=white)](https://www.blender.org/download/releases/5-3/)
-[![Release](https://img.shields.io/badge/release-v1.0.0-blue)](https://github.com/mttfntn/driver-controller-blender/releases)
+[![Blender](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmttfntn%2Fdriver-controller-blender%2Fmain%2Fdriver_controller%2Fblender_manifest.toml&query=%24.blender_version_min&label=Blender&color=E87D0D&logo=blender&logoColor=white)](https://www.blender.org/download/)
+[![Release](https://img.shields.io/github/v/release/mttfntn/driver-controller-blender)](https://github.com/mttfntn/driver-controller-blender/releases/latest)
+[![Download size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmttfntn%2Fdriver-controller-blender%2Fbadges%2Frelease-size.json)](https://github.com/mttfntn/driver-controller-blender/releases/latest)
 [![Tests](https://github.com/mttfntn/driver-controller-blender/actions/workflows/ci.yml/badge.svg)](https://github.com/mttfntn/driver-controller-blender/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-GPL--3.0--or--later-green)](LICENSE)
-[![Python](https://img.shields.io/badge/language-Python-3776AB?logo=python&logoColor=white)](driver_controller/__init__.py)
+[![License](https://img.shields.io/github/license/mttfntn/driver-controller-blender)](LICENSE)
+[![Language](https://img.shields.io/github/languages/top/mttfntn/driver-controller-blender)](driver_controller/__init__.py)
 
 Blender add-on to drive a rig or a scene from **controller empties**: their custom properties
 are edited in one N-panel, and every driver that reads them is listed, previewed and managed there.
@@ -12,7 +13,7 @@ are edited in one N-panel, and every driver that reads them is listed, previewed
 **3D Viewport > Sidebar (N) > Controllers** · Blender **5.3** only.
 
 ## Install
-1. Download `driver_controller-X.Y.Z.zip` from [Releases](https://github.com/mttfntn/driver-controller-blender/releases).
+1. Download `driver_controller-X.Y.Z.zip` from the [latest release](https://github.com/mttfntn/driver-controller-blender/releases/latest).
 2. Blender: *Edit > Preferences > Get Extensions > ⌄ > Install from Disk…* and pick the zip.
    If an earlier upload named "Driver Controllers" is installed, uninstall it first.
 
@@ -58,6 +59,11 @@ python tests/run_blender.py
 
 See **[HANDOVER.md](HANDOVER.md)** (for people) and **[AGENTS.md](AGENTS.md)** (for AI assistants) for the
 architecture, tests, release steps and known limits.
+
+## Contributing
+Bug reports, ideas and pull requests are welcome: see **[CONTRIBUTING.md](CONTRIBUTING.md)**. Open an issue with one
+of the [forms](https://github.com/mttfntn/driver-controller-blender/issues/new/choose); report security problems
+privately as described in **[SECURITY.md](SECURITY.md)**.
 
 ## License
 GPL-3.0-or-later – see [LICENSE](LICENSE). © 2026 Matteo Fontana.

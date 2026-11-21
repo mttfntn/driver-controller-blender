@@ -55,11 +55,15 @@ intended fixes differ (Edit-dialog type change on overridable props; scalar→RG
 draw benchmark (1200 drivers) 18.6 → 14.4 ms.
 
 ## Release checklist
-1. Bump `version` in `blender_manifest.toml` and `bl_info["version"]`; update the static release badge in README.
+1. Bump `version` in `blender_manifest.toml` and `bl_info["version"]`. README badges are live (shields.io/GitHub):
+   never hard-code versions in them.
 2. Tests green locally and on CI (`.github/workflows/ci.yml`, ubuntu, Blender 5.3.0 sha256-pinned, mirrors + retries).
 3. `git tag -a vX.Y.Z -m "<release notes>"` → `git push origin vX.Y.Z`. CI checks tag == manifest, builds,
-   publishes the release with the zip; notes = tag message.
+   publishes the release with the zip; notes = tag message; force-pushes `release-size.json` to the `badges`
+   branch (read by the download-size badge; don't delete that branch).
 
 ## Git
-Remote `origin` = https://github.com/mttfntn/driver-controller-blender (private). Branch `main`. Tags `vX.Y.Z`.
+Remote `origin` = https://github.com/mttfntn/driver-controller-blender (public).
+Community files: `.github/ISSUE_TEMPLATE/` (forms, blank issues off), `.github/pull_request_template.md`,
+`CONTRIBUTING.md`, `SECURITY.md` (private vulnerability reports). Branch `main`. Tags `vX.Y.Z`.
 `dist/`, `*.zip`, `*.blend`, `*.blend1` are ignored.
