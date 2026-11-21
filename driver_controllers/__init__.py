@@ -1174,8 +1174,9 @@ class DC_OT_prop_edit(DC_PropFields, Operator):
             if n:
                 self.report({"INFO"}, f"Renamed '{old}' -> '{new}', updated {n} driver(s)")
         if type_changed:
-            # Assigning to an existing ID property converts the value to the OLD
-            # type (or raises), so the property must be removed first.
+            # A library-overridable property keeps its type: assigning a new type
+            # converts the value back (int -> float) or raises TypeError. The
+            # option is on by default, so the property is removed first.
             del ctrl[new]
         ctrl[new] = self.value()
         self.apply_ui(ctrl, new, set_default=self.set_default or type_changed)

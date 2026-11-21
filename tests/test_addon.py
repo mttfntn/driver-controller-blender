@@ -188,6 +188,8 @@ class TestProperties(Base):
         self.assertEqual(dc.user_props(m), ["ok"])
 
     def test_edit_type_changes_keep_drivers(self):
+        # Add Property makes properties library-overridable, which fixes their type
+        # in Blender: the Edit dialog must still be able to change it.
         add_prop("h", "FLOAT", float_value=0.6, min_value=0, max_value=2)
         add_driver("h", path="scale", index=2)
         m = main_ctrl()
