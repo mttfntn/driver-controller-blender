@@ -85,7 +85,6 @@ DRIVER_MODES = [
     ("DIRECT", "Direct Value", "Driven value = controller property"),
     ("SCRIPTED", "Expression", "Use a scripted expression (the property is the variable 'var')"),
 ]
-NUMERIC_UI_KEYS = ("min", "max", "soft_min", "soft_max", "step", "precision")
 
 # Data-block collections that can hold drivers.
 ID_COLLECTIONS = (
@@ -713,7 +712,6 @@ def ctrl_items_keep(self, context):
 class DC_Settings(PropertyGroup):
     ctrl_index: IntProperty(name="Active Controller", default=0)
     prop_filter: StringProperty(name="Driver Filter", description="Only show drivers using this property")
-    active_prop: StringProperty(name="Active Property")
     show_vars: BoolProperty(name="Show Variables", default=False)
 
 
@@ -1055,7 +1053,6 @@ class DC_OT_prop_add(DC_PropFields, Operator):
             return {"CANCELLED"}
         ctrl[name] = self.value()
         self.apply_ui(ctrl, name)
-        context.scene.dc_settings.active_prop = name
         tag_update(context)
         return {"FINISHED"}
 
@@ -1118,87 +1115,9 @@ class DC_OT_prop_edit(DC_PropFields, Operator):
             for n in order[order.index(old) + 1:]:
                 reinsert_prop(ctrl, n)
         s = context.scene.dc_settings
-        s.active_prop = new
         if s.prop_filter == old:
             s.prop_filter = new
         tag_update(context)
-        return {"FINISHED"}
-
-
-class DC_OT_prop_set_type(Operator):
-    bl_idname = "dctrl.prop_set_type"
-    bl_label = "Change Property Type"
-    bl_description = "Change the type of the property, converting its value (drivers are kept)"
-    bl_options = {"REGISTER", "UNDO"}
-
-    ctrl_name: StringProperty(options={"HIDDEN"})
-    prop_name: StringProperty(options={"HIDDEN"})
-    new_type: EnumProperty(name="Type", items=PROP_TYPES)
-
-    def invoke(self, context, event):
-        ctrl = controller_from_name(context, self.ctrl_name)
-        if ctrl is None or self.prop_name not in ctrl.keys():
-            return {"CANCELLED"}
-        cname, pname = ctrl.name, self.prop_name
-        current = detect_type(ctrl, pname)
-
-        def draw_menu(menu, _ctx):
-            lay = menu.layout
-            for ident, label, _d in PROP_TYPES:
-                op = lay.operator(DC_OT_prop_set_type.bl_idname, text=label, icon=TYPE_ICON[ident],
-                                  depress=(ident == current))
-                op.ctrl_name = cname
-                op.prop_name = pname
-                op.new_type = ident
-
-        context.window_manager.popup_menu(draw_menu, title=f"Type of '{pname}'", icon="PROPERTIES")
-        return {"FINISHED"}
-
-    def execute(self, context):
-        ctrl = controller_from_name(context, self.ctrl_name)
-        name = self.prop_name
-        if ctrl is None or name not in ctrl.keys():
-            return {"CANCELLED"}
-        old_type = detect_type(ctrl, name)
-        if old_type == self.new_type:
-            return {"CANCELLED"}
-        old_val = ctrl[name]
-        old_list = _as_list(old_val)
-        old_ui = ui_dict(ctrl, name)
-        length = len(old_list) if old_list else (4 if self.new_type == "COLOR" else 3)
-        new_val = convert_value(old_val, self.new_type, length)
-        try:
-            ovr = ctrl.is_property_overridable_library(prop_path(name))
-        except Exception:
-            ovr = False
-        del ctrl[name]
-        ctrl[name] = new_val
-        kw = {"description": old_ui.get("description", "")}
-        lst = _as_list(ctrl[name])
-        kw["default"] = lst if lst is not None else ctrl[name]
-        if self.new_type in {"FLOAT", "VECTOR", "INT", "INT_ARRAY"}:
-            for k in NUMERIC_UI_KEYS:
-                if k in old_ui:
-                    kw[k] = old_ui[k]
-            if self.new_type in {"INT", "INT_ARRAY"}:
-                kw.pop("precision", None)
-                for k in ("min", "max", "soft_min", "soft_max"):
-                    if k in kw:
-                        kw[k] = int(max(-2**31, min(2**31 - 1, kw[k])))
-                if "step" in kw:
-                    kw["step"] = max(1, int(kw["step"]))
-        elif self.new_type == "COLOR":
-            kw.update(min=0.0, max=1.0, soft_min=0.0, soft_max=1.0, subtype="COLOR")
-        try:
-            ctrl.id_properties_ui(name).update(**kw)
-        except Exception as e:
-            print("Driver Controllers:", e)
-        try:
-            ctrl.property_overridable_library_set(prop_path(name), ovr)
-        except Exception:
-            pass
-        tag_update(context)
-        self.report({"INFO"}, f"'{name}': {TYPE_LABEL[old_type]} -> {TYPE_LABEL[self.new_type]}")
         return {"FINISHED"}
 
 
@@ -1258,21 +1177,6 @@ class DC_OT_prop_lock(Operator):
             _UNLOCKED.add(key)
         for area in context.screen.areas:
             area.tag_redraw()
-        return {"FINISHED"}
-
-
-class DC_OT_prop_select(Operator):
-    bl_idname = "dctrl.prop_select"
-    bl_label = "Select Property"
-    bl_description = "Select this property (the buttons on the right act on it)"
-
-    prop_name: StringProperty(options={"HIDDEN"})
-
-    def execute(self, context):
-        s = context.scene.dc_settings
-        s.active_prop = self.prop_name
-        if s.prop_filter:  # keep the drivers list in sync with the selection
-            s.prop_filter = self.prop_name
         return {"FINISHED"}
 
 
@@ -2028,10 +1932,8 @@ classes = (
     DC_OT_controller_select,
     DC_OT_prop_add,
     DC_OT_prop_edit,
-    DC_OT_prop_set_type,
     DC_OT_prop_remove,
     DC_OT_prop_lock,
-    DC_OT_prop_select,
     DC_OT_prop_filter,
     DC_OT_driver_copy_prop,
     DC_OT_driver_paste,
