@@ -1,0 +1,8 @@
+# Blender auto-backups and caches
+*.blend1
+*.blend2
+__pycache__/
+*.pyc
+# build output (attached to GitHub releases instead)
+dist/
+*.zip

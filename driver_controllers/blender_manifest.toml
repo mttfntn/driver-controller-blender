@@ -1,0 +1,11 @@
+schema_version = "1.0.0"
+
+id = "driver_controllers"
+version = "1.0.0"
+name = "Driver Controllers"
+tagline = "Manage controller empties, custom properties and their drivers"
+maintainer = "Matteo Fontana"
+type = "add-on"
+tags = ["Animation", "Rigging"]
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
