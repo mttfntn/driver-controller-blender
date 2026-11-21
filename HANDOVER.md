@@ -92,6 +92,10 @@ None: this project is not a fork.
 - `obj.keys()` also lists properties registered by other add-ons; `user_props()` filters them using `bl_rna`.
 - The panels are tested by drawing into a fake layout (`FakeLayout` in `tests/test_addon.py`).
 - The lock state and the driver clipboard live in memory only (by design: everything starts locked).
+- **The name is singular**, like the repo: *Driver Controller*, extension id and folder `driver_controller`.
+  The first v1.0.0 upload was named "Driver Controllers" (`driver_controllers`) by mistake; the release was
+  rebuilt under the singular name. If an old copy is installed, uninstall it before installing the new zip.
+  The plural *Controllers* (sidebar tab, `CONTROLLERS` collection) refers to the controller objects and is intended.
 
 ## Known limits
 - The Drivers panel draws one box per driver: with ~1200 drivers and no filter a full redraw takes ~14 ms.

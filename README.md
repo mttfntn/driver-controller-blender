@@ -14,6 +14,7 @@ are edited in one N-panel, and every driver that reads them is listed, previewed
 ## Install
 1. Download `driver_controller-X.Y.Z.zip` from [Releases](https://github.com/mttfntn/driver-controller-blender/releases).
 2. Blender: *Edit > Preferences > Get Extensions > ⌄ > Install from Disk…* and pick the zip.
+   If an earlier upload named "Driver Controllers" is installed, uninstall it first.
 
 ## What it does
 - **Setup**: creates the `CONTROLLERS` collection and the `MainController` empty (plain axes) when missing –

@@ -45,6 +45,9 @@ constants → helpers (`prop_path`, `ensure_setup`, `detect_type`, `convert_valu
 - Draw code must not write data (only `invalidate_index()` on a plain dict is allowed).
 - Keep `tests/` and repo docs out of the package (the build uses only `driver_controller/`).
 - Line endings: LF (`.gitattributes`).
+- **Name is singular**, matching the repo: "Driver Controller", id/folder `driver_controller`. The first v1.0.0
+  upload used the plural `driver_controllers` by mistake and was rebuilt. Plural "Controllers" (tab, `CONTROLLERS`
+  collection, `DC_UL_controllers`) means the controller objects and stays.
 
 ## How changes were verified (v1.0.0)
 38 unit tests; install test of the built zip; behaviour probe baseline `fe54ef8` vs v1.0.0 → only the two
