@@ -1,6 +1,7 @@
 # Tests on every push / pull request, in Blender 5.3 (the only supported version).
 # Pushing a tag vX.Y.Z additionally builds the extension and publishes a GitHub
-# release with the zip attached, using the annotated tag's message as notes.
+# release with the zip attached (same job, no stored artifacts), using the
+# annotated tag's message as notes.
 name: Tests
 
 on:
@@ -19,6 +20,8 @@ env:
 jobs:
   test:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write   # only used by the release steps, which run on tags only
     steps:
       - uses: actions/checkout@v4
 
@@ -68,35 +71,20 @@ jobs:
       - name: Install test (built zip, isolated profile)
         run: python3 tests/run_blender.py --blender ~/blender/blender tests/test_install.py -- dist/*.zip
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: extension
-          path: dist/*.zip
-          retention-days: 3
-
-  release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: test
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
+      # Releases are published from this same job: no stored artifacts, because the
+      # account-wide artifact storage quota can be full (it was, on the first run).
       - name: Fetch the tag object (checkout only brings the commit)
+        if: startsWith(github.ref, 'refs/tags/v')
         run: git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
 
       - name: Tag must match the manifest version
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           manifest=$(sed -n 's/^version = "\(.*\)"/\1/p' driver_controllers/blender_manifest.toml)
           [ "v$manifest" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME != manifest v$manifest"; exit 1; }
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: extension
-          path: dist
-
-      - name: Publish release
+      - name: Publish release (notes = annotated tag message)
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
