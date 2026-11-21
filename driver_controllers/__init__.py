@@ -285,7 +285,8 @@ def convert_value(v, new_type, length=3):
     if lst is None:
         lst = _parse_list(v) if isinstance(v, str) else []
         if not lst:
-            lst = [to_scalar(v)] * length
+            # a single value fills the RGB channels; alpha is added below
+            lst = [to_scalar(v)] * (3 if new_type == "COLOR" else length)
     lst = [float(x) for x in lst]
     if new_type == "COLOR":
         if len(lst) == 1:
@@ -1106,6 +1107,10 @@ class DC_OT_prop_edit(DC_PropFields, Operator):
             n = rename_prop_in_drivers(ctrl, old, new)
             if n:
                 self.report({"INFO"}, f"Renamed '{old}' -> '{new}', updated {n} driver(s)")
+        if type_changed:
+            # Assigning to an existing ID property converts the value to the OLD
+            # type (or raises), so the property must be removed first.
+            del ctrl[new]
         ctrl[new] = self.value()
         self.apply_ui(ctrl, new, set_default=self.set_default or type_changed)
         if new != old:
