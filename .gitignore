@@ -6,3 +6,6 @@ __pycache__/
 # build output (attached to GitHub releases instead)
 dist/
 *.zip
+
+# local demo scenes (not part of the repo)
+*.blend

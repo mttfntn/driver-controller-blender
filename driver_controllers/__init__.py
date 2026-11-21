@@ -66,7 +66,6 @@ PROP_TYPES = [
     ("INT_ARRAY", "Integer Array", "Array of integers"),
     ("COLOR", "Color", "RGB or RGBA color"),
 ]
-TYPE_LABEL = {k: n for k, n, _ in PROP_TYPES}
 TYPE_ICON = {
     "FLOAT": "LINENUMBERS_ON",
     "INT": "LINENUMBERS_OFF",
