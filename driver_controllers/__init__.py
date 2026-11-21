@@ -471,11 +471,14 @@ def cached_controller_drivers(ctrl, prop_filter=""):
     out = []
     key = ctrl.as_pointer()
     stale = False
+    owners = {}  # one data-block usually owns several drivers: look it up once
     for ref, path, idx, uses in driver_index():
         props = uses.get(key)
         if props is None or (prop_filter and prop_filter not in props):
             continue
-        idb = resolve_ref(ref)
+        if ref not in owners:
+            owners[ref] = resolve_ref(ref)
+        idb = owners[ref]
         fc = find_fcurve(idb, path, idx) if idb is not None else None
         if fc is None:
             stale = True
@@ -1745,7 +1748,8 @@ class DC_PT_drivers(Panel):
             box = lay.box()
             r = box.row(align=True)
             r.alert = not drv.is_valid
-            idx = f"[{fc.array_index}]" if _is_array_path(idb, fc) else ""
+            is_array, value_text = driven_info(idb, fc)
+            idx = f"[{fc.array_index}]" if is_array else ""
             label = f"{idb.name} ▸ {fc.data_path}{idx}"
             r.label(text=label, icon="ERROR" if not drv.is_valid else ID_ICON.get(idb.id_type, "DOT"))
             for idname, icon in (
@@ -1766,7 +1770,7 @@ class DC_PT_drivers(Panel):
             res = r.row(align=True)
             res.ui_units_x = 3.5
             res.alert = not drv.is_valid
-            res.label(text="= " + driven_value_text(idb, fc))
+            res.label(text="= " + value_text)
             if s.show_vars:
                 vcol = box.column(align=True)
                 for var in drv.variables:
@@ -1786,27 +1790,27 @@ class DC_PT_drivers(Panel):
                             vr.prop(t, "id", text="")
 
 
-def driven_value_text(idb, fc):
-    """Current value of the driven property (the driver's result)."""
+def driven_info(idb, fc):
+    """(is the driven property an array?, its current value as text) for a driver row.
+
+    The driven path is resolved once and used for both answers. If it cannot be
+    resolved, the row shows "?" and the index only when it is above 0.
+    """
     try:
         v = idb.path_resolve(fc.data_path)
-        if hasattr(v, "__len__") and not isinstance(v, str):
+    except Exception:
+        return fc.array_index > 0, "?"
+    is_array = hasattr(v, "__len__") and not isinstance(v, str)
+    if is_array:
+        try:
             v = v[fc.array_index]
-    except Exception:
-        return "?"
+        except Exception:
+            return True, "?"
     if isinstance(v, bool):
-        return "True" if v else "False"
+        return is_array, "True" if v else "False"
     if isinstance(v, float):
-        return "%.3f" % v
-    return str(v)
-
-
-def _is_array_path(idb, fc):
-    try:
-        v = idb.path_resolve(fc.data_path)
-        return hasattr(v, "__len__") and not isinstance(v, str)
-    except Exception:
-        return fc.array_index > 0
+        return is_array, "%.3f" % v
+    return is_array, str(v)
 
 
 # -----------------------------------------------------------------------------

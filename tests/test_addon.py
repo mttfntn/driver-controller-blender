@@ -417,8 +417,11 @@ class TestDrivers(Base):
         update()
         cube = bpy.data.objects["Cube"]
         fc = cube.animation_data.drivers.find("scale", index=1)
-        self.assertEqual(dc.driven_value_text(cube, fc), "0.500")
-        self.assertTrue(dc._is_array_path(cube, fc))
+        self.assertEqual(dc.driven_info(cube, fc), (True, "0.500"))
+        cube.shape_key_add(name="Basis")
+        broken = cube.driver_add("hide_render")
+        broken.data_path = "no_such_path"
+        self.assertEqual(dc.driven_info(cube, broken), (False, "?"))
 
 
 # ------------------------------------------------------------- controllers ---
