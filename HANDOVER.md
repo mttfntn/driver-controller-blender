@@ -23,7 +23,7 @@ Not a fork: there is no upstream project.
 | `tests/test_install.py` | Installs the built zip as an extension in a temporary profile and checks it end to end. |
 | `tests/probe_behaviour.py` | Records behaviour on a broad set of inputs as JSON, for before/after comparisons. |
 | `tests/compare_probes.py` | Diffs two probe JSON files. |
-| `.github/workflows/ci.yml` | CI: tests on push/PR; on a `vX.Y.Z` tag also builds and publishes the release, and updates the download-size badge data on the `badges` branch. |
+| `.github/workflows/ci.yml` | CI: tests on push/PR; on a `vX.Y.Z` tag also builds and publishes the release. |
 | `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md` | Issue forms (bug, feature; blank issues off) and the pull-request checklist. |
 | `CONTRIBUTING.md`, `SECURITY.md` | How to contribute; how to report security problems privately. |
 | `LICENSE`, `README.md`, `HANDOVER.md`, `AGENTS.md` | Repo documents (not shipped in the package). |
@@ -78,8 +78,7 @@ It never uses your real profile: `--factory-startup` plus a temporary `BLENDER_U
 3. Create an **annotated** tag; its message becomes the release notes:
    `git tag -a v1.2.3 -m "notes…"` then `git push origin v1.2.3`.
 4. CI re-runs the tests, checks the tag matches the manifest, builds the zip and publishes the GitHub release.
-   It then force-pushes `release-size.json` to the one-commit `badges` branch, which the README's
-   *download size* badge reads. Don't delete that branch. The other README badges are live (shields.io,
+   The README badges are live (shields.io,
    GitHub): never hard-code versions in them.
 
 ## Updates from an original project
