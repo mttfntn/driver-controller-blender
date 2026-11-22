@@ -59,7 +59,7 @@ draw benchmark (1200 drivers) 18.6 → 14.4 ms.
    never hard-code versions in them.
 2. Tests green locally and on CI (`.github/workflows/ci.yml`, ubuntu, Blender 5.3.0 sha256-pinned, mirrors + retries).
 3. `git tag -a vX.Y.Z -m "<release notes>"` → `git push origin vX.Y.Z`. CI checks tag == manifest, builds,
-   publishes the release with the zip; notes = tag message.
+   publishes the release with the zip; notes = tag message; then commits `.github/release-size.json` (download-size badge data) to `main`.
 
 ## Git
 Remote `origin` = https://github.com/mttfntn/driver-controller-blender (public).

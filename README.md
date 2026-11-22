@@ -2,6 +2,7 @@
 
 [![Blender](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmttfntn%2Fdriver-controller-blender%2Fmain%2Fdriver_controller%2Fblender_manifest.toml&query=%24.blender_version_min&label=Blender&color=E87D0D&logo=blender&logoColor=white)](https://www.blender.org/download/)
 [![Release](https://img.shields.io/github/v/release/mttfntn/driver-controller-blender)](https://github.com/mttfntn/driver-controller-blender/releases/latest)
+[![Download size](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmttfntn%2Fdriver-controller-blender%2Fmain%2F.github%2Frelease-size.json)](https://github.com/mttfntn/driver-controller-blender/releases/latest)
 [![Tests](https://github.com/mttfntn/driver-controller-blender/actions/workflows/ci.yml/badge.svg)](https://github.com/mttfntn/driver-controller-blender/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/mttfntn/driver-controller-blender)](LICENSE)
 [![Language](https://img.shields.io/github/languages/top/mttfntn/driver-controller-blender)](driver_controller/__init__.py)
