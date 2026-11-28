@@ -49,7 +49,11 @@ constants → helpers (`prop_path`, `ensure_setup`, `detect_type`, `convert_valu
   upload used the plural `driver_controllers` by mistake and was rebuilt. Plural "Controllers" (tab, `CONTROLLERS`
   collection, `DC_UL_controllers`) means the controller objects and stays.
 
-## How changes were verified (v1.0.0)
+## How changes were verified
+v1.1.0 (Apply Driver, `dctrl.driver_apply`): 41 unit tests (3 new: scalar/array, custom prop + shape key, bulk
+respects filter); install test of the built zip; behaviour probe v1.0.0 vs v1.1.0; manual test in Blender 5.3.
+
+v1.0.0:
 38 unit tests; install test of the built zip; behaviour probe baseline `fe54ef8` vs v1.0.0 → only the two
 intended fixes differ (Edit-dialog type change on overridable props; scalar→RGBA alpha = 1.0); noise check 0;
 draw benchmark (1200 drivers) 18.6 → 14.4 ms.

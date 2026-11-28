@@ -30,7 +30,7 @@ the controllers' own custom properties and one scene setting group (dc_settings)
 bl_info = {
     "name": "Driver Controller",
     "author": "Matteo Fontana",
-    "version": (1, 0, 0),
+    "version": (1, 1, 0),
     "blender": (5, 3, 0),
     "location": "3D Viewport > Sidebar (N) > Controllers",
     "description": "Manage controller empties, their custom properties and the drivers that use them",

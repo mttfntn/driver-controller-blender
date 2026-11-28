@@ -19,7 +19,7 @@ Not a fork: there is no upstream project.
 | `driver_controller/blender_manifest.toml` | Extension manifest: id, version, Blender 5.3 only, license, build excludes. |
 | `driver_controller/LICENSE` | GPL-3.0 text shipped inside the package. |
 | `tests/run_blender.py` | Starts an **isolated** headless Blender (factory settings, temporary profile) and runs a script in it. |
-| `tests/test_addon.py` | Unit tests (38): setup, conversions, properties, drivers, controllers, cache, panel drawing, registration. |
+| `tests/test_addon.py` | Unit tests (41): setup, conversions, properties, drivers, controllers, cache, panel drawing, registration. |
 | `tests/test_install.py` | Installs the built zip as an extension in a temporary profile and checks it end to end. |
 | `tests/probe_behaviour.py` | Records behaviour on a broad set of inputs as JSON, for before/after comparisons. |
 | `tests/compare_probes.py` | Diffs two probe JSON files. |
@@ -44,7 +44,11 @@ Not a fork: there is no upstream project.
 5. **Copy / paste a driver.** The copy button stores `(controller, property)` in a module-level clipboard.
    The right-click menu entry reads the hovered property from `context.property`, then creates the driver
    with `setup_controller_driver()`.
-6. **Expression sync.** A `msgbus` subscription on `Driver.type` plus `sync_expressions()` keep `var` (or the
+6. **Apply a driver** (`dctrl.driver_apply`, checkmark button). Re-evaluates the scene, reads every driven value
+   first (`driven_value`), then removes the drivers and writes the values back (`set_driven_value`, which splits
+   the path into parent + attribute / `["key"]` / `[n]`). The property keeps its value but no longer follows
+   the controller. Undoable.
+7. **Expression sync.** A `msgbus` subscription on `Driver.type` plus `sync_expressions()` keep `var` (or the
    equivalent formula) in the hidden expression of non-scripted controller drivers, so switching to
    *Scripted Expression* shows something usable. User-written scripted expressions are never touched.
 
@@ -67,7 +71,7 @@ Not a fork: there is no upstream project.
 ```
 python tests/run_blender.py                                              # 38 unit tests
 blender --factory-startup --command extension build --source-dir driver_controller --output-dir dist
-python tests/run_blender.py tests/test_install.py -- dist/driver_controller-1.0.0.zip   # install test
+python tests/run_blender.py tests/test_install.py -- dist/driver_controller-1.1.0.zip   # install test
 ```
 `run_blender.py` finds Blender via `--blender`, `$BLENDER`, the default Windows path of 5.3, or `blender` on PATH.
 It never uses your real profile: `--factory-startup` plus a temporary `BLENDER_USER_RESOURCES`.

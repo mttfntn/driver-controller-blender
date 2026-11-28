@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "driver_controller"
-version = "1.0.0"
+version = "1.1.0"
 name = "Driver Controller"
 tagline = "Manage controller empties, custom properties and their drivers"
 maintainer = "Matteo Fontana"
