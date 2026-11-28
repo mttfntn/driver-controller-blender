@@ -406,6 +406,53 @@ class TestDrivers(Base):
         self.assertIsNone(cube.animation_data.drivers.find("scale", index=0))
         self.assertIsNotNone(cube.animation_data.drivers.find("scale", index=1))
 
+    def test_apply_keeps_value_and_unlinks(self):
+        add_prop("h", float_value=0.5, min_value=0, max_value=5)
+        add_prop("off", "VECTOR", vector=[1, 2, 3], min_value=-10, max_value=10)
+        add_driver("h", path="scale", index=2)
+        add_driver("off", path="location", mode="SCRIPTED", expression="var*2")
+        main_ctrl()["h"] = 1.75
+        cube = bpy.data.objects["Cube"]
+        ref = dc.make_ref("objects", "Cube")
+        self.assertEqual(O.driver_apply("EXEC_DEFAULT", ctrl_name="MainController", owner_ref=ref,
+                                        data_path="scale", array_index=2), {"FINISHED"})
+        self.assertIsNone(cube.animation_data.drivers.find("scale", index=2))
+        self.assertIsNotNone(cube.animation_data.drivers.find("location", index=0))
+        main_ctrl()["h"] = 4.0
+        update()
+        self.assertAlmostEqual(cube.scale[2], 1.75, places=5)
+        O.driver_apply("EXEC_DEFAULT", ctrl_name="MainController", owner_ref="")  # all remaining
+        self.assertEqual(len(cube.animation_data.drivers), 0)
+        main_ctrl()["off"] = [0.0, 0.0, 0.0]
+        update()
+        self.assertEqual([round(x, 4) for x in cube.location], [2.0, 4.0, 6.0])
+
+    def test_apply_custom_prop_and_shape_key(self):
+        cube = bpy.data.objects["Cube"]
+        cube["amount"] = 0.0
+        cube.shape_key_add(name="Basis")
+        cube.shape_key_add(name="Smile")
+        add_prop("a", float_value=0.25, min_value=0, max_value=1)
+        add_driver("a", path='["amount"]')
+        add_driver("a", path='data.shape_keys.key_blocks["Smile"].value')
+        O.driver_apply("EXEC_DEFAULT", ctrl_name="MainController", owner_ref="")
+        main_ctrl()["a"] = 0.9
+        update()
+        self.assertAlmostEqual(cube["amount"], 0.25, places=5)
+        self.assertAlmostEqual(cube.data.shape_keys.key_blocks["Smile"].value, 0.25, places=5)
+        self.assertEqual(len(dc.controller_drivers(main_ctrl())), 0)
+
+    def test_apply_bulk_respects_filter(self):
+        add_prop("a")
+        add_prop("b")
+        add_driver("a", path="scale", index=0)
+        add_driver("b", path="scale", index=1)
+        bpy.context.scene.dc_settings.prop_filter = "a"
+        O.driver_apply("EXEC_DEFAULT", ctrl_name="MainController", owner_ref="")
+        cube = bpy.data.objects["Cube"]
+        self.assertIsNone(cube.animation_data.drivers.find("scale", index=0))
+        self.assertIsNotNone(cube.animation_data.drivers.find("scale", index=1))
+
     def test_select_owner(self):
         add_prop("a")
         add_driver("a", path="scale", index=0)
@@ -476,7 +523,7 @@ class TestCacheAndPanels(Base):
         ops = {e[1] for e in log if e[0] == "op"}
         for idname in ("dctrl.prop_add", "dctrl.prop_edit", "dctrl.driver_copy_prop", "dctrl.prop_lock",
                        "dctrl.prop_remove", "dctrl.prop_filter", "dctrl.driver_copy", "dctrl.driver_retarget",
-                       "dctrl.driver_remove", "dctrl.controller_add"):
+                       "dctrl.driver_apply", "dctrl.driver_remove", "dctrl.controller_add"):
             self.assertIn(idname, ops)
         labels = [e[1] for e in log if e[0] == "label"]
         self.assertIn("= 0.000", labels)

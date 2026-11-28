@@ -1545,6 +1545,82 @@ class DC_OT_driver_remove(DC_DriverRef, Operator):
         return {"FINISHED"}
 
 
+_TRAILING_KEY = re.compile(r'\[(?:"((?:[^"\\]|\\.)*)"|(\d+))\]$')
+
+
+def set_driven_value(idb, data_path, index, value):
+    """Write value to idb.data_path[index] (index used only for arrays). True on success."""
+    m = _TRAILING_KEY.search(data_path)
+    if m:
+        prefix = data_path[:m.start()]
+        key = m.group(1).replace('\\"', '"').replace("\\\\", "\\") if m.group(1) is not None else int(m.group(2))
+    else:
+        prefix, _dot, key = data_path.rpartition(".")
+    try:
+        parent = idb.path_resolve(prefix) if prefix else idb
+        cur = parent[key] if m else getattr(parent, key)
+        if hasattr(cur, "__len__") and not isinstance(cur, str):
+            cur[index] = value
+        elif m:
+            parent[key] = value
+        else:
+            setattr(parent, key, value)
+        return True
+    except Exception as e:
+        print(f"Driver Controller: cannot write {data_path}[{index}]: {e}")
+        return False
+
+
+def driven_value(idb, fc):
+    """Current value of the property driven by fc, or None."""
+    try:
+        v = idb.path_resolve(fc.data_path)
+    except Exception:
+        return None
+    if hasattr(v, "__len__") and not isinstance(v, str):
+        try:
+            v = v[fc.array_index]
+        except Exception:
+            return None
+    return v
+
+
+class DC_OT_driver_apply(DC_DriverRef, Operator):
+    bl_idname = "dctrl.driver_apply"
+    bl_label = "Apply Driver"
+    bl_description = ("Keep the current driven value and remove the driver, so the property is no longer "
+                      "linked to the controller (without owner: all listed drivers)")
+    bl_options = {"REGISTER", "UNDO"}
+
+    def invoke(self, context, event):
+        if self.owner_ref:
+            return self.execute(context)
+        return context.window_manager.invoke_confirm(self, event)
+
+    def execute(self, context):
+        for obj in get_controllers():  # make sure the driven values are current
+            obj.update_tag()
+        try:
+            context.view_layer.update()
+        except Exception:
+            pass
+        _ctrl, items = self.collect(context)
+        # Read every value first: removing one driver must not change what another one shows.
+        todo = [(idb, fc.data_path, fc.array_index, driven_value(idb, fc)) for idb, fc in items]
+        done = 0
+        for idb, path, idx, value in todo:
+            fc = find_fcurve(idb, path, idx)
+            if fc is None:
+                continue
+            idb.animation_data.drivers.remove(fc)
+            if value is not None:
+                set_driven_value(idb, path, idx, value)
+            done += 1
+        tag_update(context)
+        self.report({"INFO"}, f"Applied {done} driver(s)")
+        return {"FINISHED"} if done else {"CANCELLED"}
+
+
 class DC_OT_driver_copy(DC_DriverRef, Operator):
     bl_idname = "dctrl.driver_copy"
     bl_label = "Copy Driver to Selected"
@@ -1806,6 +1882,7 @@ class DC_PT_drivers(Panel):
             (DC_OT_driver_copy.bl_idname, "Copy to Sel.", "COPYDOWN"),
             (DC_OT_driver_retarget.bl_idname, "Retarget", "LINKED"),
             (DC_OT_driver_select_owner.bl_idname, "", "RESTRICT_SELECT_OFF"),
+            (DC_OT_driver_apply.bl_idname, "", "CHECKMARK"),
             (DC_OT_driver_remove.bl_idname, "", "TRASH"),
         ):
             op = row.operator(idname, text=text, icon=icon)
@@ -1824,6 +1901,7 @@ class DC_PT_drivers(Panel):
                 (DC_OT_driver_select_owner.bl_idname, "RESTRICT_SELECT_OFF"),
                 (DC_OT_driver_copy.bl_idname, "COPYDOWN"),
                 (DC_OT_driver_retarget.bl_idname, "LINKED"),
+                (DC_OT_driver_apply.bl_idname, "CHECKMARK"),
                 (DC_OT_driver_remove.bl_idname, "X"),
             ):
                 op = r.operator(idname, text="", icon=icon, emboss=False)
@@ -2021,6 +2099,7 @@ classes = (
     DC_OT_driver_paste,
     DC_OT_driver_add,
     DC_OT_driver_remove,
+    DC_OT_driver_apply,
     DC_OT_driver_copy,
     DC_OT_driver_retarget,
     DC_OT_driver_select_owner,

@@ -6,7 +6,7 @@ every driver in `bpy.data` that reads them. Human-oriented details: `HANDOVER.md
 
 ## Commands
 ```
-python tests/run_blender.py                                   # unit tests (expect "Ran 38 tests ... OK")
+python tests/run_blender.py                                   # unit tests (expect "Ran 41 tests ... OK")
 python tests/run_blender.py --blender PATH ...                # other Blender binary ($BLENDER also works)
 blender --factory-startup --command extension validate driver_controller
 blender --factory-startup --command extension build --source-dir driver_controller --output-dir dist

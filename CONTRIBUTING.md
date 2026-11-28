@@ -23,7 +23,7 @@ First, check whether someone has already opened an issue for the same thing.
    python tests/run_blender.py
    ```
 
-   Expected result: `Ran 38 tests ... OK` (or more). If Blender isn't found, add `--blender "path/to/blender"`.
+   Expected result: `Ran 41 tests ... OK` (or more). If Blender isn't found, add `--blender "path/to/blender"`.
 4. **If you fix a bug,** add a test to `tests/test_addon.py` that fails without your fix.
 5. **If your change could alter results,** compare behaviour with `main` using the probe tools (HANDOVER.md, "Making a change") and explain any difference in the pull request.
 6. **Open a pull request.** The template has a short checklist. CI runs the tests, builds the extension and installs the built zip on Blender 5.3.

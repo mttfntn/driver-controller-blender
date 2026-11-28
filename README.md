@@ -37,7 +37,7 @@ are edited in one N-panel, and every driver that reads them is listed, previewed
 - **Drivers** reading the active controller (anywhere in the file: objects, shape keys, materials, node trees…):
   edit type / expression / variables, see each driver's live result (e.g. `= 1.500`), select the driven object,
   **copy to selected objects** (optionally re-pointed to another controller, creating missing properties),
-  **retarget** to another controller, remove. Header buttons act on all listed drivers. With a property filter on,
+  **retarget** to another controller, **apply** (keep the current value and remove the driver), remove. Header buttons act on all listed drivers. With a property filter on,
   *Add Driver from 'prop'* drives any object path (`location`, `modifiers["Bevel"].width`,
   `data.shape_keys.key_blocks["Smile"].value` …).
 - Switching a driver from *Averaged Value* to *Scripted Expression* shows `var`, ready to edit.
